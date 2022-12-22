@@ -1,0 +1,13 @@
+[package]
+name = "wsm"
+description = "Cilki's WorkSpace Manager"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/cilki/wsm/"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+toml = "0"
+serde = { version = "1", features = ["derive"] }
+git-repository = "0"
+walkdir = "2"
