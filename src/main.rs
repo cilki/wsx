@@ -1,9 +1,11 @@
+use crate::config::Config;
 use clap::{Parser, Subcommand, ValueEnum};
-use serde::{Deserialize, Serialize};
+use log::debug;
 use std::error::Error;
 
-#[derive(Serialize, Deserialize)]
-struct Config {}
+pub mod api;
+pub mod cmd;
+pub mod config;
 
 #[derive(Debug, Parser)]
 #[command(name = "wsm")]
@@ -16,33 +18,32 @@ struct Args {
 #[derive(Debug, Subcommand)]
 enum Commands {
     #[command()]
-    Clone {
-        path: String,
-    },
+    Clone { path: String },
 
     #[command()]
     Drop { path: Option<String> },
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Initialize logging
+    env_logger::init();
+
     // Read configuration file
     let config_path = match std::env::home_dir() {
         Some(home) => format!("{}/.wsm/config.toml", home.display()),
         None => String::from(""),
     };
-    let config = match std::fs::read_to_string(config_path) {
+    let config: Config = match std::fs::read_to_string(config_path) {
         Ok(content) => toml::from_str(&content)?,
         Err(_) => todo!(),
     };
+
+    debug!("Read user configuration: {:?}", &config);
 
     let args = Args::parse();
 
     match &args.command {
         Commands::Clone { path } => Ok(()),
-        Commands::Drop { path } => cmd_drop(&config, path.clone()),
+        Commands::Drop { path } => crate::cmd::drop::run_drop(&config, path.clone()),
     }
-}
-
-fn cmd_drop(config: &Config, path: Option<String>) -> Result<(), Box<dyn Error>> {
-    Ok(())
 }
