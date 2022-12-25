@@ -1,4 +1,4 @@
-use crate::cmd::RepoPath;
+use crate::cmd::RepoPattern;
 use crate::config::Config;
 use cmd_lib::*;
 use log::debug;
@@ -9,13 +9,12 @@ pub fn run_drop(config: &Config, path: Option<String>) -> Result<(), Box<dyn Err
     debug!("Drop requested for: {:?}", &path);
 
     let repos = match path {
-        Some(path) => RepoPath::parse(&config, path)?,
+        Some(p) => config.resolve(&RepoPattern::parse(&p)?),
         None => Vec::new(),
     };
 
     for repo in repos {
-        let p = repo.path();
-        let out = run_fun!(git -C $p status --porcelain)?;
+        let out = run_fun!(git -C $repo status --porcelain)?;
         println!("{}", out);
     }
     Ok(())

@@ -1,10 +1,19 @@
+use crate::cmd::RepoPattern;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use std::path::PathBuf;
 
 /// Represents the user's config file
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub workspace: Vec<Workspace>,
+}
+
+impl Config {
+    /// Resolve a repository pattern into a list of local paths
+    pub fn resolve(&self, pattern: &RepoPattern) -> Vec<PathBuf> {
+        todo!()
+    }
 }
 
 /// Represents a workspace which is ultimately the thing we're managing

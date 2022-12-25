@@ -1462,6 +1462,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "simple-error"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc47a29ce97772ca5c927f75bac34866b16d64e07f330c3248e2d7226623901b"
+
+[[package]]
 name = "smallvec"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1810,8 +1816,9 @@ dependencies = [
  "env_logger",
  "git-repository",
  "log",
+ "regex",
  "serde",
+ "simple-error",
  "toml",
- "url",
  "walkdir",
 ]
