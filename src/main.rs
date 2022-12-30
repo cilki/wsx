@@ -1,28 +1,11 @@
 use crate::config::Config;
-use clap::{Parser, Subcommand, ValueEnum};
 use log::debug;
 use std::error::Error;
 
 pub mod api;
+pub mod cache;
 pub mod cmd;
 pub mod config;
-
-#[derive(Debug, Parser)]
-#[command(name = "wsm")]
-#[command(about = "Cilki's WorkSpace Manager", long_about = None)]
-struct Args {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Debug, Subcommand)]
-enum Commands {
-    #[command()]
-    Clone { path: String },
-
-    #[command()]
-    Drop { path: Option<String> },
-}
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Initialize logging
@@ -40,10 +23,35 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     debug!("Read user configuration: {:?}", &config);
 
-    let args = Args::parse();
-
-    match &args.command {
-        Commands::Clone { path } => Ok(()),
-        Commands::Drop { path } => crate::cmd::drop::run_drop(&config, path.clone()),
+    match std::env::var("_ARGCOMPLETE_") {
+        Ok(shell_type) => {
+            return match shell_type.as_str() {
+                "bash" => complete_bash(),
+                "fish" => complete_fish(),
+                _ => todo!(),
+            };
+        }
+        Err(_) => (),
     }
+
+    let mut args = pico_args::Arguments::from_env();
+
+    match args.subcommand()? {
+        Some(command) => match command.as_str() {
+            "checkout" => todo!(),
+            "drop" => crate::cmd::drop::run_drop(&config, args.opt_free_from_str()?),
+            _ => todo!(),
+        },
+        None => todo!(),
+    }
+}
+
+/// Output dynamic completions for bash
+fn complete_bash() -> Result<(), Box<dyn Error>> {
+    todo!()
+}
+
+/// Output dynamic completions for fish
+fn complete_fish() -> Result<(), Box<dyn Error>> {
+    todo!()
 }

@@ -6,7 +6,6 @@ edition = "2021"
 repository = "https://github.com/cilki/wsm/"
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
 toml = "0"
 serde = { version = "1", features = ["derive"] }
 git-repository = "0"
@@ -16,3 +15,4 @@ regex = "1"
 log = "0.4.17"
 env_logger = "0.10.0"
 simple-error = "0.2.3"
+pico-args = "0.5.0"
