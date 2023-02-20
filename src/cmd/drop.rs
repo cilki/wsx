@@ -1,5 +1,5 @@
 use crate::cmd::RepoPattern;
-use crate::config::Config;
+use crate::Config;
 use cmd_lib::*;
 use log::debug;
 use std::error::Error;
@@ -9,13 +9,24 @@ pub fn run_drop(config: &Config, path: Option<String>) -> Result<(), Box<dyn Err
     debug!("Drop requested for: {:?}", &path);
 
     let repos = match path {
-        Some(p) => config.resolve(&RepoPattern::parse(&p)?),
+        Some(p) => config.resolve_local(&RepoPattern::parse(&p)?),
         None => Vec::new(),
     };
 
     for repo in repos {
         let out = run_fun!(git -C $repo status --porcelain)?;
-        println!("{}", out);
+        if out == "" {
+            if let Some(cache) = &config.cache {
+                // Cache the repository
+                cache.cache(repo.to_string_lossy().to_string())?;
+            }
+
+            // Remove the directory
+            debug!("Removing directory: {:?}", &repo);
+            std::fs::remove_dir_all(repo)?;
+        } else {
+            debug!("Refusing to drop repository with uncommitted changes");
+        }
     }
     Ok(())
 }

@@ -1,11 +1,6 @@
-use crate::config::Config;
 use log::debug;
 use std::error::Error;
-
-pub mod api;
-pub mod cache;
-pub mod cmd;
-pub mod config;
+use wsm::Config;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Initialize logging
@@ -14,7 +9,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Read configuration file
     let config_path = match std::env::home_dir() {
         Some(home) => format!("{}/.wsm/config.toml", home.display()),
-        None => String::from(""),
+        None => todo!(),
     };
     let config: Config = match std::fs::read_to_string(config_path) {
         Ok(content) => toml::from_str(&content)?,
@@ -38,11 +33,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match args.subcommand()? {
         Some(command) => match command.as_str() {
-            "checkout" => todo!(),
-            "drop" => crate::cmd::drop::run_drop(&config, args.opt_free_from_str()?),
-            _ => todo!(),
+            "drop" => wsm::cmd::drop::run_drop(&config, args.opt_free_from_str()?),
+            _ => wsm::cmd::open::run_open(&config, Some(command)),
         },
-        None => todo!(),
+        None => todo!(), // TODO open UI
     }
 }
 

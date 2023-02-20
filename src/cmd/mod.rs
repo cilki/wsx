@@ -3,9 +3,10 @@ use simple_error::bail;
 use std::error::Error;
 
 pub mod drop;
+pub mod open;
 
 /// Represents a pattern that matches one or more repositories. It has the
-/// format: [workspace]:[path].
+/// format: [workspace]:[provider]/[path].
 #[derive(Debug, Eq, PartialEq)]
 pub struct RepoPattern {
     /// The workspace name
@@ -30,7 +31,7 @@ impl RepoPattern {
     }
 
     pub fn maybe_provider(&self) -> Option<(String, String)> {
-        let parts: Vec<&str> = self.path.splitn(1, "/").collect();
+        let parts: Vec<&str> = self.path.splitn(2, "/").collect();
         if parts.len() == 2 && parts[0] != "" {
             Some((parts[0].to_string(), parts[1].to_string()))
         } else {

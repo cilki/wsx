@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::fmt::Display;
 
-pub mod github;
-pub mod gitlab;
+//pub mod github;
+//pub mod gitlab;
 
 pub trait Provider: Display {
     /// List all repository paths available to the provider.
