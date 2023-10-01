@@ -8,6 +8,11 @@ use std::error::Error;
 pub fn run_open(config: &Config, path: Option<String>) -> Result<(), Box<dyn Error>> {
     debug!("Open requested for: {:?}", &path);
 
+    // Check the cache first
+    if let Some(cache) = &config.cache {
+        
+    }
+
     let repos = match path {
         Some(p) => config.resolve_local(&RepoPattern::parse(&p)?), // TODO remote
         None => Vec::new(),

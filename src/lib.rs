@@ -123,25 +123,36 @@ impl Cache {
         std::fs::create_dir_all(&self.cache)?;
 
         let source = format!("{}/.git", repo_path);
-        let dest = format!(
-            "{}/{:X}",
-            self.cache,
-            Sha512::new().chain_update(repo_path).finalize()
-        );
+        let dest = self.compute_cache_key(&repo_path);
         run_fun!(git -C $source config core.bare true)?;
 
         debug!("Caching '{}' -> '{}'", source, dest);
+
+        // Clear the cache entry if it exists
+        std::fs::remove_dir_all(&dest).ok();
+
         run_fun!(mv $source $dest)?;
         Ok(())
     }
 
     pub fn uncache(&self, repo_path: String) -> Result<(), Box<dyn Error>> {
-        let source = format!(
-            "{}/{:X}",
-            self.cache,
-            Sha512::new().chain_update(&repo_path).finalize()
-        );
+        let source = self.compute_cache_key(&repo_path);
         run_fun!(git clone $source $repo_path)?;
         Ok(())
+    }
+
+    pub fn exists(&self, repo_path: String) -> bool {
+        match std::fs::metadata(self.compute_cache_key(&repo_path)) {
+            Ok(_) => true,
+            Err(_) => false,
+        }
+    }
+
+    fn compute_cache_key(&self, path: &str) -> String {
+        format!(
+            "{}/{:x}",
+            self.cache,
+            Sha512::new().chain_update(path).finalize()
+        )
     }
 }
