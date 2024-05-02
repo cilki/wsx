@@ -1,8 +1,8 @@
+use anyhow::Result;
 use log::debug;
-use std::error::Error;
 use wsm::Config;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     // Initialize logging
     env_logger::init();
 
@@ -41,11 +41,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Output dynamic completions for bash
-fn complete_bash() -> Result<(), Box<dyn Error>> {
+fn complete_bash() -> Result<()> {
     todo!()
 }
 
 /// Output dynamic completions for fish
-fn complete_fish() -> Result<(), Box<dyn Error>> {
+fn complete_fish() -> Result<()> {
     todo!()
 }

@@ -1,4 +1,5 @@
 use crate::cmd::RepoPattern;
+use anyhow::Result;
 use cmd_lib::run_fun;
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -55,7 +56,7 @@ impl Config {
 }
 
 /// Recursively find git repositories.
-fn find_git_dir(path: &str) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+fn find_git_dir(path: &str) -> Result<Vec<PathBuf>> {
     debug!("Searching for git repositories in: {}", path);
     let mut found: Vec<PathBuf> = Vec::new();
 
@@ -118,7 +119,7 @@ pub struct Cache {
 
 impl Cache {
     /// Move the given repository into the cache.
-    pub fn cache(&self, repo_path: String) -> Result<(), Box<dyn Error>> {
+    pub fn cache(&self, repo_path: String) -> Result<()> {
         // Make sure the cache directory exists first
         std::fs::create_dir_all(&self.cache)?;
 
@@ -135,7 +136,7 @@ impl Cache {
         Ok(())
     }
 
-    pub fn uncache(&self, repo_path: String) -> Result<(), Box<dyn Error>> {
+    pub fn uncache(&self, repo_path: String) -> Result<()> {
         let source = self.compute_cache_key(&repo_path);
         run_fun!(git clone $source $repo_path)?;
         Ok(())

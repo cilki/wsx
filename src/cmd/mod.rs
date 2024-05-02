@@ -1,6 +1,6 @@
+use anyhow::bail;
+use anyhow::Result;
 use regex::Regex;
-use simple_error::bail;
-use std::error::Error;
 
 pub mod drop;
 pub mod open;
@@ -17,7 +17,7 @@ pub struct RepoPattern {
 }
 
 impl RepoPattern {
-    pub fn parse(path: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn parse(path: &str) -> Result<Self> {
         match Regex::new(r"^([^/]+:)?(.*)$")?.captures(path) {
             Some(captures) => Ok(Self {
                 workspace: captures
@@ -43,10 +43,10 @@ impl RepoPattern {
 #[cfg(test)]
 mod test_repo_pattern {
     use super::RepoPattern;
-    use std::error::Error;
+    use anyhow::Result;
 
     #[test]
-    fn test_parse() -> Result<(), Box<dyn Error>> {
+    fn test_parse() -> Result<()> {
         assert_eq!(
             RepoPattern::parse("workspace12:remote1/abc/123")?,
             RepoPattern {

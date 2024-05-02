@@ -1,11 +1,11 @@
 use crate::cmd::RepoPattern;
 use crate::Config;
+use anyhow::Result;
 use cmd_lib::*;
 use log::debug;
-use std::error::Error;
 
 /// Drop one or more repositories from the workspace
-pub fn run_drop(config: &Config, path: Option<String>) -> Result<(), Box<dyn Error>> {
+pub fn run_drop(config: &Config, path: Option<String>) -> Result<()> {
     debug!("Drop requested for: {:?}", &path);
 
     let repos = match path {

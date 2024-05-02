@@ -1,6 +1,6 @@
 use crate::api::Provider;
 use crate::Provider;
-use std::error::Error;
+use anyhow::Result;
 use std::fmt;
 
 pub struct GithubProvider {
@@ -14,7 +14,7 @@ impl fmt::Display for GithubProvider {
 }
 
 impl Provider for GithubProvider {
-    fn list_repo_paths(&self) -> Result<Vec<String>, Box<dyn Error>> {
+    fn list_repo_paths(&self) -> Result<Vec<String>> {
         let mut paths: Vec<String> = Vec::new();
 
         /*loop {
