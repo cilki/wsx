@@ -2,7 +2,7 @@ use crate::cmd::RepoPattern;
 use crate::Config;
 use anyhow::Result;
 use cmd_lib::*;
-use log::debug;
+use tracing::debug;
 
 /// Open one or more repositories in the workspace
 pub fn run_open(config: &Config, path: Option<String>) -> Result<()> {

@@ -1,12 +1,11 @@
 use crate::cmd::RepoPattern;
 use anyhow::Result;
 use cmd_lib::run_fun;
-use log::debug;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
-use std::error::Error;
 use std::path::Path;
 use std::path::PathBuf;
+use tracing::debug;
 
 pub mod api;
 pub mod cmd;

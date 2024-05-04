@@ -2,7 +2,7 @@ use crate::cmd::RepoPattern;
 use crate::Config;
 use anyhow::Result;
 use cmd_lib::*;
-use log::debug;
+use tracing::debug;
 
 /// Drop one or more repositories from the workspace
 pub fn run_drop(config: &Config, path: Option<String>) -> Result<()> {
