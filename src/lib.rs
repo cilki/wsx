@@ -20,6 +20,17 @@ pub struct Config {
     pub cache: Option<Cache>,
 }
 
+impl Default for Config {
+    // Place the cache according to platform
+
+    fn default() -> Self {
+        Self {
+            workspace: vec![],
+            cache: None,
+        }
+    }
+}
+
 impl Config {
     /// Resolve a repository pattern against local repositories.
     pub fn resolve_local(&self, pattern: &RepoPattern) -> Vec<PathBuf> {
