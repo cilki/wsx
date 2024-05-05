@@ -6,11 +6,14 @@ pub mod drop;
 pub mod open;
 
 /// Represents a pattern that matches one or more repositories. It has the
-/// format: [workspace]:[provider]/[path].
+/// format: [workspace]:[remote]/[path].
 #[derive(Debug, Eq, PartialEq)]
 pub struct RepoPattern {
     /// The workspace name
     pub workspace: Option<String>,
+
+    /// The remote name
+    pub remote: Option<String>,
 
     /// The repo path
     pub path: String,
@@ -18,13 +21,15 @@ pub struct RepoPattern {
 
 impl RepoPattern {
     pub fn parse(path: &str) -> Result<Self> {
-        match Regex::new(r"^([^/]+:)?(.*)$")?.captures(path) {
-            Some(captures) => Ok(Self {
+        match Regex::new(r"^([^/]+:)?([^/]+)?(.*)$")?.captures(path) {
+            Some(captures) => {captures.len();
+                Ok(Self {
                 workspace: captures
                     .get(1)
                     .map(|m| m.as_str().to_string())
                     .map(|s| s[..s.len() - 1].to_string()),
                 path: captures.get(2).unwrap().as_str().to_string(),
+                    remote: todo!(), },
             }),
             None => bail!("Invalid repository path pattern"),
         }

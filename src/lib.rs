@@ -1,14 +1,16 @@
 use crate::cmd::RepoPattern;
+use anyhow::bail;
 use anyhow::Result;
 use cmd_lib::run_fun;
+use remote::Remote;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
 use std::path::Path;
 use std::path::PathBuf;
 use tracing::debug;
 
-pub mod api;
 pub mod cmd;
+pub mod remote;
 
 /// Represents the user's config file
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,23 +19,58 @@ pub struct Config {
 
     /// The cache directory for all workspaces
     #[serde(flatten)]
-    pub cache: Option<Cache>,
+    pub cache: Option<RepoCache>,
 }
 
 impl Default for Config {
     // Place the cache according to platform
 
     fn default() -> Self {
+        let home = home::home_dir().expect("the home directory exists");
+
         Self {
-            workspace: vec![],
-            cache: None,
+            workspace: vec![Workspace {
+                name: Some("default".into()),
+                path: home.join("workspace").display().to_string(),
+                remotes: vec![],
+            }],
+            cache: Some(RepoCache {
+                path: home.join(".cache/wsx").display().to_string(),
+            }),
         }
     }
 }
 
 impl Config {
+    /// Load the application config from the filesystem or provide a default if
+    /// none exists.
+    pub fn load() -> Result<Self> {
+        let config_path = match home::home_dir() {
+            Some(home) => format!("{}/.config/wsx.toml", home.display()),
+            None => bail!("Home directory not found"),
+        };
+        debug!(config_path = %config_path, "Searching for configuration file");
+
+        let config: Config = match std::fs::metadata(&config_path) {
+            Ok(_) => toml::from_str(&std::fs::read_to_string(config_path)?)?,
+            Err(_) => Config::default(),
+        };
+        debug!(config = ?config, "Loaded configuration");
+
+        // Make sure all necessary directories exist
+        if let Some(cache) = config.cache.as_ref() {
+            std::fs::create_dir_all(&cache.path)?;
+        }
+        for workspace in config.workspace.iter() {
+            std::fs::create_dir_all(&workspace.path)?;
+        }
+
+        Ok(config)
+    }
+
     /// Resolve a repository pattern against local repositories.
     pub fn resolve_local(&self, pattern: &RepoPattern) -> Vec<PathBuf> {
+        // Either find the specified workspace or choose the first available
         let workspace: &Workspace = match &pattern.workspace {
             Some(workspace_name) => self
                 .workspace
@@ -46,26 +83,26 @@ impl Config {
             None => self.workspace.first().unwrap(),
         };
 
-        let (provider, path) = match pattern.maybe_provider() {
+        let (remote, path) = match pattern.maybe_provider() {
             Some((provider, path)) => {
                 debug!("{} {}", provider, path);
                 (
                     workspace
-                        .provider
+                        .remotes
                         .iter()
                         .find(|&p| p.name == provider)
                         .unwrap(),
                     path,
                 )
             }
-            None => (workspace.provider.first().unwrap(), pattern.path.clone()),
+            None => (workspace.remotes.first().unwrap(), pattern.path.clone()),
         };
 
-        find_git_dir(&format!("{}/{}/{}", workspace.path, provider.name, path)).unwrap()
+        find_git_dir(&format!("{}/{}/{}", workspace.path, remote.name, path)).unwrap()
     }
 }
 
-/// Recursively find git repositories.
+/// Recursively find "top-level" git repositories.
 fn find_git_dir(path: &str) -> Result<Vec<PathBuf>> {
     debug!("Searching for git repositories in: {}", path);
     let mut found: Vec<PathBuf> = Vec::new();
@@ -100,7 +137,7 @@ pub struct Workspace {
     pub path: String,
 
     /// A list of providers for the workspace
-    pub provider: Vec<Provider>,
+    pub remotes: Vec<Remote>,
 }
 
 impl Workspace {
@@ -118,20 +155,15 @@ impl Workspace {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Provider {
-    /// The provider's name for use in repo paths
-    pub name: String,
-}
-
 /// Caches repositories that are dropped from a `Workspace` in a separate directory.
 /// Entries in this cache are bare repositories for space efficiency.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Cache {
+pub struct RepoCache {
     pub path: String,
+    // TODO cache parameters?
 }
 
-impl Cache {
+impl RepoCache {
     /// Move the given repository into the cache.
     pub fn cache(&self, repo_path: String) -> Result<()> {
         // Make sure the cache directory exists first

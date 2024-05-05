@@ -13,25 +13,7 @@ fn main() -> Result<()> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    // Locate configuration file
-    let config_path = match home::home_dir() {
-        Some(home) => format!("{}/.config/wsx.toml", home.display()),
-        None => todo!(),
-    };
-
-    // Load configuration file
-    let config: Config = match std::fs::metadata(&config_path) {
-        Ok(_) => {
-            debug!(config_path = %config_path, "Loading configuration file");
-            toml::from_str(&std::fs::read_to_string(config_path)?)?
-        }
-        Err(_) => {
-            debug!("Using default config");
-            Config::default()
-        }
-    };
-
-    debug!(config = ?config, "Using configuration");
+    let config = Config::load()?;
 
     match std::env::var("_ARGCOMPLETE_") {
         Ok(shell_type) => {
@@ -51,6 +33,7 @@ fn main() -> Result<()> {
 
     match args.subcommand()? {
         Some(command) => match command.as_str() {
+            "clone" => wsx::cmd::open::run_open(&config, args.opt_free_from_str()?),
             "drop" => wsx::cmd::drop::run_drop(&config, args.opt_free_from_str()?),
             "help" => print_help(),
             _ => wsx::cmd::open::run_open(&config, Some(command)),
@@ -68,6 +51,7 @@ fn print_help() -> Result<()> {
     );
     println!("");
     println!("wsx <repo pattern>         - Clone one or more repositories");
+    println!("wsx clone <repo pattern>   - Clone one or more repositories");
     println!("wsx drop [repo pattern]    - Drop one or more repositories");
     Ok(())
 }

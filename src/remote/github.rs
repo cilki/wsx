@@ -1,19 +1,18 @@
-use crate::api::Provider;
-use crate::Provider;
+use super::ListRepos;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
-pub struct GithubProvider {
-    pub config: Provider,
-}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GithubRemote {}
 
-impl fmt::Display for GithubProvider {
+impl fmt::Display for GithubRemote {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Github",)
     }
 }
 
-impl Provider for GithubProvider {
+impl ListRepos for GithubRemote {
     fn list_repo_paths(&self) -> Result<Vec<String>> {
         let mut paths: Vec<String> = Vec::new();
 
