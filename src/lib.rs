@@ -87,7 +87,10 @@ fn find_git_dir(path: &str) -> Result<Vec<PathBuf>> {
     Ok(found)
 }
 
-/// Represents a workspace which is just a collection of repositories.
+/// A `Workspace` is filesystem directory containing git repositories checked out
+/// from one or more remotes. Each repository's path matches the remote's path,
+/// for example:
+///     <workspace path>/github.com/cilki/wsx
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Workspace {
     /// A user-friendly name for the workspace like "personal" or "work"
@@ -121,23 +124,24 @@ pub struct Provider {
     pub name: String,
 }
 
-/// Represents a workspace cache which is just a collection of bare repositories.
+/// Caches repositories that are dropped from a `Workspace` in a separate directory.
+/// Entries in this cache are bare repositories for space efficiency.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Cache {
-    pub cache: String,
+    pub path: String,
 }
 
 impl Cache {
     /// Move the given repository into the cache.
     pub fn cache(&self, repo_path: String) -> Result<()> {
         // Make sure the cache directory exists first
-        std::fs::create_dir_all(&self.cache)?;
+        std::fs::create_dir_all(&self.path)?;
 
         let source = format!("{}/.git", repo_path);
         let dest = self.compute_cache_key(&repo_path);
         run_fun!(git -C $source config core.bare true)?;
 
-        debug!("Caching '{}' -> '{}'", source, dest);
+        debug!(source = %source, dest = %dest, "Caching repository");
 
         // Clear the cache entry if it exists
         std::fs::remove_dir_all(&dest).ok();
@@ -162,7 +166,7 @@ impl Cache {
     fn compute_cache_key(&self, path: &str) -> String {
         format!(
             "{}/{:x}",
-            self.cache,
+            self.path,
             Sha512::new().chain_update(path).finalize()
         )
     }
