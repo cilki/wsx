@@ -8,6 +8,7 @@ use sha2::{Digest, Sha512};
 use std::path::Path;
 use std::path::PathBuf;
 use tracing::debug;
+use tracing::warn;
 
 pub mod cmd;
 pub mod remote;
@@ -23,8 +24,6 @@ pub struct Config {
 }
 
 impl Default for Config {
-    // Place the cache according to platform
-
     fn default() -> Self {
         let home = home::home_dir().expect("the home directory exists");
 
@@ -68,43 +67,34 @@ impl Config {
         Ok(config)
     }
 
+    /// Find a configured workspace by name.
+    pub fn workspace_by_name(&self, workspace_name: &str) -> Option<&Workspace> {
+        self.workspace.iter().find(|&w| match &w.name {
+            Some(name) => name == workspace_name,
+            None => false,
+        })
+    }
+
     /// Resolve a repository pattern against local repositories.
-    pub fn resolve_local(&self, pattern: &RepoPattern) -> Vec<PathBuf> {
-        // Either find the specified workspace or choose the first available
-        let workspace: &Workspace = match &pattern.workspace {
-            Some(workspace_name) => self
-                .workspace
-                .iter()
-                .find(|&w| match &w.name {
-                    Some(name) => name == workspace_name,
-                    None => false,
-                })
-                .unwrap(),
-            None => self.workspace.first().unwrap(),
-        };
-
-        let (remote, path) = match pattern.maybe_provider() {
-            Some((provider, path)) => {
-                debug!("{} {}", provider, path);
-                (
-                    workspace
-                        .remotes
-                        .iter()
-                        .find(|&p| p.name == provider)
-                        .unwrap(),
-                    path,
-                )
+    pub fn search_local(&self, pattern: &RepoPattern) -> Result<Vec<PathBuf>> {
+        match &pattern.workspace_name {
+            Some(workspace_name) => {
+                if let Some(workspace) = self.workspace_by_name(&workspace_name) {
+                    workspace.search(pattern)
+                } else {
+                    bail!("Workspace not found")
+                }
             }
-            None => (workspace.remotes.first().unwrap(), pattern.path.clone()),
-        };
-
-        find_git_dir(&format!("{}/{}/{}", workspace.path, remote.name, path)).unwrap()
+            None => {
+                todo!()
+            }
+        }
     }
 }
 
 /// Recursively find "top-level" git repositories.
 fn find_git_dir(path: &str) -> Result<Vec<PathBuf>> {
-    debug!("Searching for git repositories in: {}", path);
+    debug!(path = %path, "Recursively searching for git repositories");
     let mut found: Vec<PathBuf> = Vec::new();
 
     match std::fs::metadata(format!("{}/.git", &path)) {
@@ -152,6 +142,21 @@ impl Workspace {
                 .into_string()
                 .unwrap(),
         }
+    }
+
+    /// Search the workspace for local repos matching the given pattern.
+    pub fn search(&self, pattern: &RepoPattern) -> Result<Vec<PathBuf>> {
+        let repos = find_git_dir(&format!("{}/{}", self.path, pattern.path))?;
+
+        // Try each remote if there were no matches immediately
+        // if repos.len() == 0 {
+        //     for remote in self.remotes.iter() {
+        //         let repos = find_git_dir(&format!("{}/{}/{}", self.path, remote.name(), pattern.path))?;
+        //         if repos.len() == 0 {}
+        //     }
+        // }
+
+        Ok(repos)
     }
 }
 

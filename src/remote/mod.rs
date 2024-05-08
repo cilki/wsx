@@ -13,6 +13,11 @@ pub trait ListRepos {
     fn list_repo_paths(&self) -> Result<Vec<String>>;
 }
 
+#[enum_dispatch]
+pub trait Metadata {
+    fn name(&self) -> String;
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[enum_dispatch(ListRepos)]
 pub enum Remote {
